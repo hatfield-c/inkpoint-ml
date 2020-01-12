@@ -1,5 +1,8 @@
 import random
 import math
+import csv
+
+from PIL import Image
 
 class Matrix:
     @staticmethod
@@ -173,7 +176,7 @@ class Matrix:
             for x in range(width):
                 column = []
                 for y in range(height):
-                    weight = random.uniform(0.0000001, 0.9999999)
+                    weight = random.uniform(-1, 1)
 
                     column.append(weight)
 
@@ -271,6 +274,18 @@ class Matrix:
         return result
 
     @staticmethod
+    def toInteger(matrix):
+        width = len(matrix)
+        height = len(matrix[0])
+
+        result = Matrix.getEmptyMatrix(width, height)
+        for x in range(width):
+            for y in range(height):
+                result[x][y] = int(round(matrix[x][y]))
+            
+        return result
+
+    @staticmethod
     def getRow(matrix, k):
         width = len(matrix)
         height = len(matrix[0])
@@ -285,3 +300,52 @@ class Matrix:
             result.append(entry)
 
         return result
+
+    @staticmethod
+    def pixNorm(matrix):
+        return Matrix.normEntries(matrix = matrix, maxVal = 255)
+
+    @staticmethod
+    def normEntries(matrix, maxVal):
+        width = len(matrix)
+        height = len(matrix[0])
+
+        result = []
+
+        for x in range(width):
+            column = []
+            for y in range(height):
+                entry = matrix[x][y]
+                entry = entry / maxVal
+                column.append(entry)
+
+            result.append(column)
+
+        return result
+
+    @staticmethod
+    def SaveImage(matrix, path):
+        width = len(matrix)
+        height = len(matrix[0])
+
+        img = Image.new(mode = "RGB", size = (width, height))
+        pixels = img.load()
+
+        for x in range(width):
+            for y in range(height):
+                entry = 255 - matrix[x][y]
+                pixels[x, y] = (entry, entry, entry)
+
+        img.save(path)
+
+    @staticmethod
+    def SaveCSV(matrix, path):
+        width = len(matrix)
+        height = len(matrix[0])
+
+        matrixTrans = Matrix.transpose(orig = matrix)
+        with open(path, mode = "w", newline = '') as matrixFile:
+            writer = csv.writer(matrixFile)
+            
+            for column in matrixTrans:
+                writer.writerow(column)

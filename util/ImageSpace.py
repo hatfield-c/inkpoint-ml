@@ -46,3 +46,69 @@ class ImageSpace:
 
     def show(self):
         self.img.show()
+
+    @staticmethod
+    def ExtractNeighbors(x, y, imgField):
+        shades = {}
+
+        shades["n"] = ImageSpace.SelectPixel(
+            imgField = imgField, 
+            x = x, 
+            y = y - 1
+        )
+        shades["ne"] = ImageSpace.SelectPixel(
+            imgField = imgField, 
+            x = x + 1, 
+            y = y - 1
+        )
+        shades["e"] = ImageSpace.SelectPixel(
+            imgField = imgField, 
+            x = x + 1, 
+            y = y
+        )
+        shades["se"] = ImageSpace.SelectPixel(
+            imgField = imgField, 
+            x = x + 1, 
+            y = y + 1
+        )
+        shades["s"] = ImageSpace.SelectPixel(
+            imgField = imgField, 
+            x = x, 
+            y = y + 1
+        )
+        shades["sw"] = ImageSpace.SelectPixel(
+            imgField = imgField, 
+            x = x - 1, 
+            y = y + 1
+        )
+        shades["w"] = ImageSpace.SelectPixel(
+            imgField = imgField, 
+            x = x - 1, 
+            y = y
+        )
+        shades["nw"] = ImageSpace.SelectPixel(
+            imgField = imgField, 
+            x = x - 1, 
+            y = y - 1
+        )
+
+        return shades
+
+    @staticmethod
+    def SelectPixel(imgField, x, y):
+        width = len(imgField)
+        height = len(imgField[0])
+
+        if x < 0:
+            x = 0
+
+        if x > width - 1:
+            x = width - 1
+
+        if y < 0:
+            y = 0
+
+        if y > height - 1:
+            y = height - 1
+
+        return imgField[x][y]

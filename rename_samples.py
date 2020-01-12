@@ -1,14 +1,18 @@
 import os
+import random
 from PIL import Image
 
 rootPath = "C:/Users/Cody/Documents/Professional/inkpoint-ml/samples"
 files = os.listdir("C:/Users/Cody/Documents/Professional/inkpoint-ml/samples")
 
-newName = "input"
+newName = "in"
 index = 0
 for fileName in files:
     # Make three copies of the image, and invert each one about a respective x/y axis. This creates four useful samples
     # from just one, as it is unlikely that a sample will be perfectly mirrored along an axis
+
+    if fileName == "old" or fileName == "orig":
+        continue
 
     os.rename(r'' + rootPath + '/' + fileName, r'' + rootPath + '/' + newName + str(index) + '.png')
 
@@ -27,3 +31,19 @@ for fileName in files:
 
     index += 1
 
+files = os.listdir("C:/Users/Cody/Documents/Professional/inkpoint-ml/samples")
+random.shuffle(files)
+
+newName = "input"
+index = 0
+for fileName in files:
+    # Make three copies of the image, and invert each one about a respective x/y axis. This creates four useful samples
+    # from just one, as it is unlikely that a sample will be perfectly mirrored along an axis
+
+    if fileName == "old" or fileName == "orig":
+        continue
+
+    os.rename(r'' + rootPath + '/' + fileName, r'' + rootPath + '/' + newName + str(index) + '.png')
+
+    normalImg = Image.open(rootPath + '/' + newName + str(index) + '.png')
+    index += 1

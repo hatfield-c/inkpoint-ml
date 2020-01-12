@@ -77,7 +77,6 @@ class CenterLearning:
         #Matrix.printM(W)
         print("\nFinished!")
 
-            
     def updateV(self, predicted, V, W, x, y):
         derivative = self.dldv(predicted = predicted, V = V, W = W, x = x, y = y)
         stepAmount = Matrix.multScalar(matrix = derivative, scalar = self.learnRate)
