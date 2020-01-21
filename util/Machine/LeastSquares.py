@@ -19,27 +19,28 @@ class LeastSquares(util.Machine.Machine):
 
     def learnOnce(self, desired, inputData):
         predicted = self.predict(inputData)
-        self.updateTheta(desired, predicted, inputData)
 
-        self.ln += self.calcCost(desired, predicted)
+        self.updateTheta(desired, predicted, inputData)
+        cost = self.calcCost(desired, predicted)
+        self.ln += cost
+
         self.runs += 1
+        return {
+            "predicted": predicted[0][0],
+            "cost": cost
+        }
 
     def predict(self, inputData):
         inputs = [ list(inputData.values()) ]
         
         vTrans = Matrix.transpose(self.V)
+
         h = self.hBasis(self.W, inputs)
         vH = Matrix.linearTransform(vTrans, h)
 
         vhSigmoid = Matrix.sigmoidal(vH)
         
         return vhSigmoid
-
-    def getRisk(self):
-        if self.runs < 1:
-            return self.ln
-        
-        return self.ln / self.runs
 
     def hBasis(self, W, s):
         phi = Matrix.linearTransform(W, s)
@@ -48,7 +49,7 @@ class LeastSquares(util.Machine.Machine):
         return h
 
     def calcCost(self, desired, predicted):
-        return (desired - predicted) ** 2
+        return (desired - predicted[0][0]) ** 2
 
     def dldw(self, desired, predicted, s):
         # dldw = (- (desired - predicted)) * V' * DIAG[Sigmoidal(W * s)] * uk * s'
@@ -83,19 +84,18 @@ class LeastSquares(util.Machine.Machine):
         result = Matrix.transpose(result)
         return result
 
-    def dldv(self, desired, predicted, V, W, s):
-        # dldv = (y - yd)) * predicted * (1 - predicted) * h'
+    def dldv(self, desired, predicted, s):
+        # dldv = -(y - yd) * predicted * (1 - predicted) * h'
 
         difference = (-1) * (desired - predicted[0][0])
         inversePredicted = Matrix.subMatrix([ [1] ] , predicted)
         diffInversePred = Matrix.multScalar(matrix = inversePredicted, scalar = difference)
         
-        # Get the term (predicted * (1 - predicted)), and then extract the scalar value
-        # from the resulting 1x1 matrix
+        # Get the term (y - yd)(predicted * (1 - predicted))
         predInversePred = Matrix.linearTransform(predicted, diffInversePred)
         predInversePred = predInversePred[0][0]
 
-        h = self.hBasis(W, s)
+        h = self.hBasis(self.W, s)
 
         hTrans = Matrix.transpose(h)
         result = Matrix.multScalar(matrix = hTrans, scalar = predInversePred)

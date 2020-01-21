@@ -1,6 +1,7 @@
 import csv
 import random
 import math
+import util.machine.LeastSquares as ML
 
 from Matrix import Matrix
 from util.ImageSpace import ImageSpace
@@ -12,13 +13,17 @@ class ShadeLearning:
     INPUTS = [
         "x distance from center",
         "y distance from center",
+        "x position",
+        "y posposition",
+        "x of point's center",
+        "y of point's center",
         "seed value",
         [
             "Pixel Values of image that does/will contain ink point",
             "pixel0",
             "pixel1",
             "...",
-            "pixel24"
+            "pixel8"
         ]
     ]
 
@@ -32,33 +37,35 @@ class ShadeLearning:
             "W": None
         }
 
+        self.machine = None
+
     # The learning algorithm
     def learn(self, save = False):
-        sampleData = self.getSampleData()
-        nSamples = len(sampleData["centers"])
 
+        sampleData = self.getSampleData()
+        nSamples = len(sampleData["samples"])
         self.sampleWidth = 5
 
         # to do: add noise to white background of points when they are written into a field
 
-        self.nOutput = 1
-        self.nHidden = 7
-        self.nInputs = 11
-        self.learnRate = 0.001
-
-        V = Matrix.getRandomWeights(width = self.nOutput, height = self.nHidden)
-        W = Matrix.getRandomWeights(width = self.nInputs, height = self.nHidden)
+        if self.machine is None:
+            self.machine = ML.LeastSquares(
+                nOutput = 1,
+                nHidden = 9,
+                nInputs = 16,
+                learnRate = 0.001
+            )
 
         descend = True
         passCount = 1
         while descend:
             ln = Matrix.getEmptyMatrix(self.sampleWidth, self.sampleWidth)
             shadePredictions = None
-            indexSeed = 0
 
-            for centerIndex in sampleData["centers"]:
-                centers = sampleData["centers"][centerIndex]
-                sampleImg = sampleData["samples"][centerIndex]
+            indexSeed = 0
+            for sampleId in sampleData["samples"]:
+                centers = sampleData["samples"][sampleId]["centers"]
+                sampleImg = sampleData["samples"][sampleId]["img"]
                 sampleNorm = Matrix.pixNorm(matrix = sampleImg)
 
                 predictions = []
@@ -68,48 +75,35 @@ class ShadeLearning:
                     xCenter = int(xCenter)
                     yCenter = int(yCenter)
                     shadePredictions = Matrix.getEmptyMatrix(self.sampleWidth, self.sampleWidth)
+                    cost = Matrix.getEmptyMatrix(self.sampleWidth, self.sampleWidth)
 
+                    shadePredictions[xCenter][yCenter] = sampleNorm[xCenter][yCenter]
                     for x, y in self.pixelOrder():
                         xDist = abs(int(center[0]) - x)
                         yDist = abs(int(center[1]) - y)
 
                         inputs = {
-                            "x": xDist / 5,
-                            "y": yDist / 5,
-                            "seed": 1 / (indexSeed + 1)
+                            "xDist": xDist / 5,
+                            "yDist": yDist / 5,
+                            "xPos": x,
+                            "yPos": y,
+                            "xCen": xCenter,
+                            "yCen": yCenter,
+                            "shadeSeed": sampleNorm[xCenter][yCenter], 
+                            "numericalSeed": 1 / (indexSeed + 1)
                         }
                         inputs.update(
                             ImageSpace.ExtractNeighbors(
-                                x = x, 
+                                x = x,
                                 y = y, 
                                 imgField = shadePredictions
                             )
                         )
-
-                        predictedShade = self.predict(
-                            V = V, 
-                            W = W, 
-                            s = inputs
-                        )
-                        # Extract the only element from the resulting matrix
-                        shadePredictions[x][y] = predictedShade[0][0]
                         
-                        V = self.updateV(
-                            desired = sampleNorm[x][y],
-                            predicted = predictedShade, 
-                            V = V, 
-                            W = W, 
-                            s = inputs
-                        )
-                        W = self.updateW(
-                            desired = sampleNorm[x][y], 
-                            predicted = predictedShade, 
-                            V = V, 
-                            W = W, 
-                            s = inputs
-                        )
+                        resultData = self.machine.learnOnce(desired = sampleNorm[x][y], inputData = inputs)
+                        shadePredictions[x][y] = resultData["predicted"]
+                        cost[x][y] = resultData["cost"]
 
-                    cost = self.calcCost(sampleNorm, shadePredictions)
                     ln = Matrix.addMatrix(ln, cost)
                     indexSeed += 1
 
@@ -120,24 +114,31 @@ class ShadeLearning:
                     avgObjective += ln[x][y]
             avgObjective = avgObjective / (self.sampleWidth * self.sampleWidth)
 
-            print(" ------------ Pass: " + str(passCount) + "   |   Obj: " + str(avgObjective) + " ------------ ")
-            print("ln:")
+            print(" ------------ Pass: " + str(passCount) +  " ------------ ")
+            print("Avg  : " + str(avgObjective))
+            print("Total: " + str(self.machine.getRisk()))
+            print("ln   : ")
             Matrix.printM(ln)
             
             finished = True
             for x in range(self.sampleWidth):
                 for y in range(self.sampleWidth):
-                    if ln[x][y] > 0.095:
+                    if ln[x][y] > 0.25:
                         finished = False
 
-            if finished:
+
+            if finished:#or avgObjective < 0.2:
                 break
+
+            #print("Continue? (y/n)")
+            #cont = input()
+
+            #if cont == "n":
+            #    break
 
             passCount += 1
 
-        self.theta["V"] = V
-        self.theta["W"] = W
-
+        self.theta = self.machine.getTheta()
         if save:
             vPath = "C:/Users/Cody/Documents/Professional/inkpoint-ml/data/vWeights.csv"
             wPath = "C:/Users/Cody/Documents/Professional/inkpoint-ml/data/wWeights.csv"
@@ -145,114 +146,6 @@ class ShadeLearning:
             Matrix.SaveCSV(matrix = self.theta["W"], path = wPath)
 
         print("\nFinished!")
-
-    def predict(self, V, W, s):
-        inputs = [ list(s.values()) ]
-        
-        vTrans = Matrix.transpose(V)
-        h = self.hBasis(W, inputs)
-        vH = Matrix.linearTransform(vTrans, h)
-
-        vhSigmoid = Matrix.sigmoidal(vH)
-        
-        return vhSigmoid
-
-    def updateW(self, desired, predicted, V, W, s):
-        s = [ list(s.values()) ]
-
-        derivative = self.dldw(desired = desired, predicted = predicted, V = V, W = W, s = s)
-        stepAmount = Matrix.multScalar(matrix = derivative, scalar = self.learnRate)
-
-        wNew = Matrix.subMatrix(W, stepAmount)
-        return wNew
-
-    def updateV(self, desired, predicted, V, W, s):
-        s = [ list(s.values()) ]
-
-        derivative = self.dldv(desired = desired, predicted = predicted, V = V, W = W, s = s)
-        stepAmount = Matrix.multScalar(matrix = derivative, scalar = self.learnRate)
-        
-        # Transpose stepAmount to fix row alignmentissue  caused by structure of program
-        stepAmount = Matrix.transpose(stepAmount)
-
-        # Calculate the new V
-        vNew = Matrix.subMatrix(V, stepAmount)
-        return vNew
-
-    def dldw(self, desired, predicted, V, W, s):
-        # dldw = (- (desired - predicted)) * V' * DIAG[Sigmoidal(W * s)] * uk * s'
-        difference = desired - predicted[0][0]
-        difference = -1 * difference
-
-        vTrans = Matrix.transpose(V)
-        diffVt = Matrix.multScalar(matrix = vTrans, scalar = difference)
-
-        sTrans = Matrix.transpose(s)
-        rowsW = Matrix.transpose(W)
-
-        result = []
-        for k in range(self.nHidden):
-            wk = Matrix.getRow(matrix = W, k = k)
-            
-            wks = Matrix.linearTransform(wk, s)
-            
-            sigmaWks = Matrix.sigmoidal(wks)
-            diagSigma = Matrix.diag(sigmaWks)
-            
-            uk = Matrix.columnOfI(k, self.nHidden)
-            ukSt = Matrix.linearTransform(uk, sTrans)
-
-            diffVtdiag = Matrix.multScalar(diffVt, diagSigma[0][0])
-            dcdwk = Matrix.linearTransform(diffVtdiag, ukSt)
-
-            # Extract first and only row from the dcdwk matrix
-            dcdwk = Matrix.transpose(dcdwk)
-            result.append(dcdwk[0])
-
-        result = Matrix.transpose(result)
-        return result
-
-    def dldv(self, desired, predicted, V, W, s):
-        # dldv = (y - yd)) * predicted * (1 - predicted) * h'
-
-        difference = (-1) * (desired - predicted[0][0])
-        inversePredicted = Matrix.subMatrix([ [1] ] , predicted)
-        diffInversePred = Matrix.multScalar(matrix = inversePredicted, scalar = difference)
-        
-        # Get the term (predicted * (1 - predicted)), and then extract the scalar value
-        # from the resulting 1x1 matrix
-        predInversePred = Matrix.linearTransform(predicted, diffInversePred)
-        predInversePred = predInversePred[0][0]
-
-        h = self.hBasis(W, s)
-
-        hTrans = Matrix.transpose(h)
-        result = Matrix.multScalar(matrix = hTrans, scalar = predInversePred)
-
-        return result
-
-    def hBasis(self, W, s):
-        phi = Matrix.linearTransform(W, s)
-        h = Matrix.softplus(phi)
-
-        return h
-
-    def calcCost(self, sample, predicted):
-        costs = []
-
-        #print(predicted)
-        for x in range(len(sample)):
-            column = []
-            for y in range(len(sample[0])):
-                desired = sample[x][y]
-                pred = predicted[x][y]
-
-                cost = (desired - pred) ** 2
-                column.append(cost)
-
-            costs.append(column)
-
-        return costs
 
     def getSampleData(self):
         centerPath = "C:/Users/Cody/Documents/Professional/inkpoint-ml/data/centers.csv"
@@ -263,14 +156,18 @@ class ShadeLearning:
             "shades": {},
             "samples": {}
         }
+
+        data = {
+            "samples": {},
+            "shades": {}
+        }
         with open(centerPath) as centerFile:
             centerReader = csv.reader(centerFile)
 
             for centers in centerReader:
                 centerList = []
                 index = centers.pop(0)
-                img = self.readSampleImage(index = index)
-                data["samples"][index] = img
+                data["samples"][str(index)] = {}
 
                 for center in centers:
                     parse = center.split(":")
@@ -278,11 +175,11 @@ class ShadeLearning:
                     centerList.append(pos)
 
                 # Store the converted values
-                data["centers"][index] = centerList
+                data["samples"][str(index)]["centers"] = centerList
 
                 # Read the sample image data based on the extracted index
                 img = self.readSampleImage(index = index)
-                data["samples"][index] = img
+                data["samples"][str(index)]["img"] = img
 
         with open(shadePath) as shadeFile:
             shadeReader = csv.reader(shadeFile)
@@ -294,6 +191,15 @@ class ShadeLearning:
             data["shades"]["min"] = float(shadeData[1])
             data["shades"]["max"] = float(shadeData[2])
 
+        randomOrder = {}
+        keys = list(data["samples"].keys())
+        random.shuffle(keys)
+
+        for key in keys:
+            randomOrder[key] = data["samples"][key]
+
+        data["samples"] = randomOrder
+
         return data
         
     def readSampleImage(self, index):
@@ -302,6 +208,47 @@ class ShadeLearning:
         imgSpace = ImageSpace(img = img)
 
         return imgSpace.getField()
+
+    def gen(self, index):
+        result = Matrix.getEmptyMatrix(self.sampleWidth, self.sampleWidth)
+
+        center = self.chooseCenter()
+        xCenter, yCenter = center
+        xCenter = int(xCenter)
+        yCenter = int(yCenter)
+
+        seedShade = self.centerShade()
+        shades = Matrix.getEmptyMatrix(self.sampleWidth, self.sampleWidth)
+        shades[xCenter][yCenter] = seedShade
+        for x, y in self.pixelOrder():
+            xDist = abs(int(center[0]) - x)
+            yDist = abs(int(center[1]) - y)
+            
+            inputs = {
+                "xDist": xDist / 5,
+                "yDist": yDist / 5,
+                "xPos": x,
+                "yPos": y,
+                "xCen": xCenter,
+                "yCen": yCenter,
+                "shadeSeed": seedShade / 255,
+                "numericalSeed": 1 / (index + 1)
+            }
+            inputs.update(
+                ImageSpace.ExtractNeighbors(
+                    x = x, 
+                    y = y, 
+                    imgField = shades
+                )
+            )
+
+            prediction = self.machine.predict(inputData = inputs)
+            shades[x][y] = prediction[0][0]
+
+        shades = Matrix.multScalar(matrix = shades, scalar = 255)
+        shades = Matrix.toInteger(matrix = shades)
+
+        return shades
     
     # Generates the order in which pixels should be iterated when processing a sample.
     # There is an element of non-determinism so as to prevent memorization
@@ -348,60 +295,24 @@ class ShadeLearning:
 
         return order
 
-    def gen(self, index):
-        V = self.theta["V"]
-        W = self.theta["W"]
-        result = Matrix.getEmptyMatrix(self.sampleWidth, self.sampleWidth)
-
-        center = self.chooseCenter()
-        xCenter, yCenter = center
-        xCenter = int(xCenter)
-        yCenter = int(yCenter)
-
-        shades = Matrix.getEmptyMatrix(self.sampleWidth, self.sampleWidth)
-        for x, y in self.pixelOrder():
-            xDist = abs(int(center[0]) - x)
-            yDist = abs(int(center[1]) - y)
-
-            inputs = {
-                "x": xDist / 5,
-                "y": yDist / 5,
-                "index": 1 / (index + 1)
-            }
-            inputs.update(
-                ImageSpace.ExtractNeighbors(
-                    x = x, 
-                    y = y, 
-                    imgField = shades
-                )
-            )
-
-            prediction = self.predict(V = V, W = W, s = inputs)
-            shades[x][y] = prediction[0][0]
-
-        shades = Matrix.multScalar(matrix = shades, scalar = 255)
-        shades = Matrix.toInteger(matrix = shades)
-
-        return shades
-
     def chooseCenter(self):
-        choices = [
-            [1, 1],
-            [1, 2],
-            [1, 2],
-            [1, 3],
-            [2, 1],
-            [2, 1],
-            [2, 2],
-            [2, 2],
-            [2, 2],
-            [2, 2],
-            [2, 3],
-            [2, 3],
-            [3, 1],
-            [3, 2],
-            [3, 2],
-            [3, 3]
-        ]
+        prob = { 1: 0.15, 2: 0.75, 3: 1.0 }
 
-        return random.choice(choices)
+        xSet = None
+        ran = random.random()
+        for x in [1, 2, 3]:
+            if prob[x] > ran:
+                xSet = x
+                break
+
+        ySet = None
+        ran = random.random()
+        for y in [1, 2, 3]:
+            if prob[y] > ran:
+                ySet = y
+                break
+
+        return [x, y]
+
+    def centerShade(self):
+        return random.triangular(low = 211, high = 255, mode = 249)
