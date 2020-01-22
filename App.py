@@ -25,7 +25,7 @@ class App:
         f = agent.gen(3577)
         g = agent.gen(-5)
 
-        basePath = "C:/Users/Cody/Documents/Professional/inkpoint-ml/render/point-tests/"
+        basePath = "C:/Users/hatfi/Documents/professional/inkpoint-ml/render/point-tests/"
         Matrix.SaveImage(matrix = a, path = basePath + "out0.png")
         Matrix.SaveImage(matrix = b, path = basePath + "out1.png")
         Matrix.SaveImage(matrix = c, path = basePath + "out2003.png")

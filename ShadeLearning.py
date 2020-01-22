@@ -17,7 +17,8 @@ class ShadeLearning:
         "y posposition",
         "x of point's center",
         "y of point's center",
-        "seed value",
+        "shade seed value",
+        "numerical seed value",
         [
             "Pixel Values of image that does/will contain ink point",
             "pixel0",
@@ -79,6 +80,9 @@ class ShadeLearning:
 
                     shadePredictions[xCenter][yCenter] = sampleNorm[xCenter][yCenter]
                     for x, y in self.pixelOrder():
+                        if x == xCenter and y == yCenter:
+                            continue
+
                         xDist = abs(int(center[0]) - x)
                         yDist = abs(int(center[1]) - y)
 
@@ -123,11 +127,11 @@ class ShadeLearning:
             finished = True
             for x in range(self.sampleWidth):
                 for y in range(self.sampleWidth):
-                    if ln[x][y] > 0.25:
+                    if ln[x][y] > 0.15:
                         finished = False
 
 
-            if finished:#or avgObjective < 0.2:
+            if finished or passCount > 10:
                 break
 
             #print("Continue? (y/n)")
@@ -140,16 +144,16 @@ class ShadeLearning:
 
         self.theta = self.machine.getTheta()
         if save:
-            vPath = "C:/Users/Cody/Documents/Professional/inkpoint-ml/data/vWeights.csv"
-            wPath = "C:/Users/Cody/Documents/Professional/inkpoint-ml/data/wWeights.csv"
+            vPath = "C:/Users/hatfi/Documents/professional/inkpoint-ml/data/vWeights.csv"
+            wPath = "C:/Users/hatfi/Documents/professional/inkpoint-ml/data/wWeights.csv"
             Matrix.SaveCSV(matrix = self.theta["V"], path = vPath)
             Matrix.SaveCSV(matrix = self.theta["W"], path = wPath)
 
         print("\nFinished!")
 
     def getSampleData(self):
-        centerPath = "C:/Users/Cody/Documents/Professional/inkpoint-ml/data/centers.csv"
-        shadePath = "C:/Users/Cody/Documents/Professional/inkpoint-ml/data/shades.csv"
+        centerPath = "C:/Users/hatfi/Documents/professional/inkpoint-ml/data/centers.csv"
+        shadePath = "C:/Users/hatfi/Documents/professional/inkpoint-ml/data/shades.csv"
 
         data = {
             "centers": {},
@@ -203,7 +207,7 @@ class ShadeLearning:
         return data
         
     def readSampleImage(self, index):
-        imgPath = "C:/Users/Cody/Documents/Professional/inkpoint-ml/samples/input" + str(index) + ".png"
+        imgPath = "C:/Users/hatfi/Documents/professional/inkpoint-ml/samples/input" + str(index) + ".png"
         img = Image.open(imgPath)
         imgSpace = ImageSpace(img = img)
 
@@ -217,10 +221,13 @@ class ShadeLearning:
         xCenter = int(xCenter)
         yCenter = int(yCenter)
 
-        seedShade = self.centerShade()
+        seedShade = self.centerShade() / 255
         shades = Matrix.getEmptyMatrix(self.sampleWidth, self.sampleWidth)
         shades[xCenter][yCenter] = seedShade
         for x, y in self.pixelOrder():
+            if x == xCenter and y == yCenter:
+                continue
+
             xDist = abs(int(center[0]) - x)
             yDist = abs(int(center[1]) - y)
             
@@ -231,7 +238,7 @@ class ShadeLearning:
                 "yPos": y,
                 "xCen": xCenter,
                 "yCen": yCenter,
-                "shadeSeed": seedShade / 255,
+                "shadeSeed": seedShade,
                 "numericalSeed": 1 / (index + 1)
             }
             inputs.update(
