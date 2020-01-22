@@ -1,2 +1,3 @@
 /samples/old
 /samples/orig
+*__pycache__*

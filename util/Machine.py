@@ -57,6 +57,10 @@ class Machine:
             "W": self.W
         }
 
+    def setTheta(self, V, W):
+        self.V = V
+        self.W = W
+
     def calcCost(self, desired, predicted):
         pass
 

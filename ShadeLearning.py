@@ -39,22 +39,26 @@ class ShadeLearning:
         }
 
         self.machine = None
+        self.sampleWidth = 5
+        self.nOutput = 1
+        self.nHidden = 9
+        self.nInputs = 16
+        self.learnRate = 0.001
 
     # The learning algorithm
     def learn(self, save = False):
 
         sampleData = self.getSampleData()
         nSamples = len(sampleData["samples"])
-        self.sampleWidth = 5
 
         # to do: add noise to white background of points when they are written into a field
 
         if self.machine is None:
             self.machine = ML.LeastSquares(
-                nOutput = 1,
-                nHidden = 9,
-                nInputs = 16,
-                learnRate = 0.001
+                nOutput = self.nOutput,
+                nHidden = self.nHidden,
+                nInputs = self.nInputs,
+                learnRate = self.learnRate
             )
 
         descend = True
@@ -127,11 +131,11 @@ class ShadeLearning:
             finished = True
             for x in range(self.sampleWidth):
                 for y in range(self.sampleWidth):
-                    if ln[x][y] > 0.15:
+                    if ln[x][y] > 0.21:
                         finished = False
 
 
-            if finished or passCount > 10:
+            if finished or passCount > 10 :
                 break
 
             #print("Continue? (y/n)")
@@ -144,16 +148,16 @@ class ShadeLearning:
 
         self.theta = self.machine.getTheta()
         if save:
-            vPath = "C:/Users/hatfi/Documents/professional/inkpoint-ml/data/vWeights.csv"
-            wPath = "C:/Users/hatfi/Documents/professional/inkpoint-ml/data/wWeights.csv"
+            vPath = "C:/Users/Cody/Documents/Professional/inkpoint-ml/data/vWeights.csv"
+            wPath = "C:/Users/Cody/Documents/Professional/inkpoint-ml/data/wWeights.csv"
             Matrix.SaveCSV(matrix = self.theta["V"], path = vPath)
             Matrix.SaveCSV(matrix = self.theta["W"], path = wPath)
 
         print("\nFinished!")
 
     def getSampleData(self):
-        centerPath = "C:/Users/hatfi/Documents/professional/inkpoint-ml/data/centers.csv"
-        shadePath = "C:/Users/hatfi/Documents/professional/inkpoint-ml/data/shades.csv"
+        centerPath = "C:/Users/Cody/Documents/Professional/inkpoint-ml/data/centers.csv"
+        shadePath = "C:/Users/Cody/Documents/Professional/inkpoint-ml/data/shades.csv"
 
         data = {
             "centers": {},
@@ -207,13 +211,13 @@ class ShadeLearning:
         return data
         
     def readSampleImage(self, index):
-        imgPath = "C:/Users/hatfi/Documents/professional/inkpoint-ml/samples/input" + str(index) + ".png"
+        imgPath = "C:/Users/Cody/Documents/Professional/inkpoint-ml/samples/input" + str(index) + ".png"
         img = Image.open(imgPath)
         imgSpace = ImageSpace(img = img)
 
         return imgSpace.getField()
 
-    def gen(self, index):
+    def gen(self, index, baseShade):
         result = Matrix.getEmptyMatrix(self.sampleWidth, self.sampleWidth)
 
         center = self.chooseCenter()
@@ -221,7 +225,7 @@ class ShadeLearning:
         xCenter = int(xCenter)
         yCenter = int(yCenter)
 
-        seedShade = self.centerShade() / 255
+        seedShade = baseShade / 255
         shades = Matrix.getEmptyMatrix(self.sampleWidth, self.sampleWidth)
         shades[xCenter][yCenter] = seedShade
         for x, y in self.pixelOrder():
@@ -323,3 +327,21 @@ class ShadeLearning:
 
     def centerShade(self):
         return random.triangular(low = 211, high = 255, mode = 249)
+
+    def load(self):
+        path = "C:/Users/Cody/Documents/Professional/inkpoint-ml/data/"
+
+        V = Matrix.LoadCSV(path = path + "vWeights.csv")
+        W = Matrix.LoadCSV(path = path + "wWeights.csv")
+
+        V = Matrix.stringToFloat(V)
+        W = Matrix.stringToFloat(W)
+
+        self.machine = ML.LeastSquares(
+            nOutput = self.nOutput,
+            nHidden = self.nHidden,
+            nInputs = self.nInputs,
+            learnRate = self.learnRate
+        )
+
+        self.machine.setTheta(V = V, W = W)

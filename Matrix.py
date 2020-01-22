@@ -286,6 +286,19 @@ class Matrix:
         return result
 
     @staticmethod
+    def stringToFloat(matrix):
+        width = len(matrix)
+        height = len(matrix[0])
+
+        result = Matrix.getEmptyMatrix(width, height)
+        for x in range(width):
+            for y in range(height):
+                result[x][y] = float(matrix[x][y])
+            
+        return result
+        
+
+    @staticmethod
     def getRow(matrix, k):
         width = len(matrix)
         height = len(matrix[0])
@@ -349,3 +362,17 @@ class Matrix:
             
             for column in matrixTrans:
                 writer.writerow(column)
+
+    @staticmethod
+    def LoadCSV(path):
+
+        rows = []
+
+        with open(path, mode = "r", newline = '') as matrixFile:
+            csvReader = csv.reader(matrixFile)
+
+            for row in csvReader:
+                rows.append(row)
+
+        result = Matrix.transpose(rows)
+        return result
