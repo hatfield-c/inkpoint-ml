@@ -5,6 +5,7 @@ from Matrix import Matrix
 from TrainingFactory import TrainingFactory
 from CenterLearning import CenterLearning
 from ShadeLearning import ShadeLearning
+from Artist import Artist
 
 class App:
     def __init__(self):
@@ -18,18 +19,26 @@ class App:
         #agent.learn(save = True)
         agent.load()
 
-        a = agent.gen(index = 0, baseShade = agent.centerShade())
+        artist = Artist(
+            pen = agent,
+            edgeSource = 'imgs/flesh-edges.png',
+            shadeSource = 'imgs/fleshpile-clean.png',
+            resultPath = 'imgs/drawing.png'
+        )
+        artist.draw()
+
+        '''a = agent.gen(index = 0, baseShade = agent.centerShade())
         a1 = agent.gen(index = 0, baseShade = agent.centerShade())
         a2 = agent.gen(index = 0, baseShade = agent.centerShade())
         a3 = agent.gen(index = 0, baseShade = agent.centerShade())
         a4 = agent.gen(index = 0, baseShade = agent.centerShade())
         a5 = agent.gen(index = 0, baseShade = agent.centerShade())
-        '''b = agent.gen(1)
+        b = agent.gen(1)
         c = agent.gen(2003)
         d = agent.gen(2005)
         e = agent.gen(4789)
         f = agent.gen(3577)
-        g = agent.gen(-5)'''
+        g = agent.gen(-5)
 
         basePath = "C:/Users/Cody/Documents/Professional/inkpoint-ml/render/point-tests/"
         Matrix.SaveImage(matrix = a, path = basePath + "out0.png")
@@ -38,7 +47,7 @@ class App:
         Matrix.SaveImage(matrix = a3, path = basePath + "out0-3.png")
         Matrix.SaveImage(matrix = a4, path = basePath + "out0-4.png")
         Matrix.SaveImage(matrix = a5, path = basePath + "out0-5.png")
-        '''Matrix.SaveImage(matrix = b, path = basePath + "out1.png")
+        Matrix.SaveImage(matrix = b, path = basePath + "out1.png")
         Matrix.SaveImage(matrix = c, path = basePath + "out2003.png")
         Matrix.SaveImage(matrix = d, path = basePath + "out2005.png")
         Matrix.SaveImage(matrix = e, path = basePath + "out4789.png")

@@ -83,7 +83,7 @@ class ShadeLearning:
                     cost = Matrix.getEmptyMatrix(self.sampleWidth, self.sampleWidth)
 
                     shadePredictions[xCenter][yCenter] = sampleNorm[xCenter][yCenter]
-                    for x, y in self.pixelOrder():
+                    for x, y in self.pixelOrder([xCenter, yCenter]):
                         if x == xCenter and y == yCenter:
                             continue
 
@@ -91,8 +91,8 @@ class ShadeLearning:
                         yDist = abs(int(center[1]) - y)
 
                         inputs = {
-                            "xDist": xDist / 5,
-                            "yDist": yDist / 5,
+                            "xDist": xDist / self.sampleWidth,
+                            "yDist": yDist / self.sampleWidth,
                             "xPos": x,
                             "yPos": y,
                             "xCen": xCenter,
@@ -227,17 +227,17 @@ class ShadeLearning:
 
         seedShade = baseShade / 255
         shades = Matrix.getEmptyMatrix(self.sampleWidth, self.sampleWidth)
-        shades[xCenter][yCenter] = seedShade
-        for x, y in self.pixelOrder():
-            if x == xCenter and y == yCenter:
-                continue
+        #shades[xCenter][yCenter] = seedShade
+        for x, y in self.pixelOrder([xCenter, yCenter]):
+            #if x == xCenter and y == yCenter:
+                #continue
 
             xDist = abs(int(center[0]) - x)
             yDist = abs(int(center[1]) - y)
             
             inputs = {
-                "xDist": xDist / 5,
-                "yDist": yDist / 5,
+                "xDist": xDist / self.sampleWidth,
+                "yDist": yDist / self.sampleWidth,
                 "xPos": x,
                 "yPos": y,
                 "xCen": xCenter,
@@ -262,63 +262,83 @@ class ShadeLearning:
         return shades
     
     # Generates the order in which pixels should be iterated when processing a sample.
-    # There is an element of non-determinism so as to prevent memorization
-    def pixelOrder(self):
+    # The center is always chosen first, and all chosen pixel after that "radiate" out
+    # from this center.
+    # There is an element of non-determinism so as to prevent memorization, which is
+    # implemented via a random shuffling of each layer once it is compiled. Layer ordering
+    # is still enforced.
+    def pixelOrder(self, center):
+
+        centerX = center[0]
+        centerY = center[1]
         order = [ 
-            [2, 2] 
+            [centerX, centerY] 
         ]
+        layers = []
 
-        firstLayer = [
-            [1, 1],
-            [1, 2],
-            [1, 3],
-            [3, 1],
-            [3, 2],
-            [3, 3],
-            [2, 1],
-            [2 ,3]
-        ]
+        i = 0
+        xMin = centerX - 1
+        xMax = centerX + 1
+        yMin = centerY - 1
+        yMax = centerY + 1
+        while True:
+            layer = []
 
-        secondLayer = [
-            [0, 0],
-            [0, 1],
-            [0, 2],
-            [0, 3],
-            [0, 4],
-            [4, 0],
-            [4, 1],
-            [4, 2],
-            [4, 3],
-            [4, 4],
-            [1, 0],
-            [2, 0],
-            [3, 0],
-            [1, 4],
-            [2, 4],
-            [3, 4]
-        ]
-        
-        random.shuffle(firstLayer)
-        random.shuffle(secondLayer)
+            if xMin < 0 and xMax > self.sampleWidth - 1 and yMin < 0 and yMax > self.sampleWidth - 1:
+                break
 
-        order.extend(firstLayer)
-        order.extend(secondLayer)
+            for x in range(xMin, xMax + 1):
+                if x < 0 or x > self.sampleWidth - 1:
+                    continue
+
+                if yMin > -1:
+                    layer.append([x, yMin])
+
+                if yMax < self.sampleWidth:
+                    layer.append([x, yMax])
+
+            for y in range(yMin, yMax + 1):
+                if y < 0 or y > self.sampleWidth - 1:
+                    continue
+
+                if y == yMin or y == yMax:
+                    continue
+
+                if xMin > -1:
+                    layer.append([xMin, y])
+
+                if xMax < self.sampleWidth:
+                    layer.append([xMax, y])
+
+            random.shuffle(layer)
+            layers.append(layer)
+
+            i += 1
+            xMin -= 1
+            xMax += 1
+            yMin -= 1
+            yMax += 1
+
+        for i in range(len(layers)):
+            order.extend(layers[i])
 
         return order
 
     def chooseCenter(self):
-        prob = { 1: 0.15, 2: 0.75, 3: 1.0 }
+        absoluteCenter = (self.sampleWidth - 1) / 2
+        aC = absoluteCenter
+        prob = { aC - 1: 0.15, aC: 0.75, aC + 1: 1.0 }
 
         xSet = None
         ran = random.random()
-        for x in [1, 2, 3]:
+        for x in [aC - 1, aC, aC + 1]:
             if prob[x] > ran:
                 xSet = x
                 break
 
         ySet = None
         ran = random.random()
-        for y in [1, 2, 3]:
+        for y in [aC - 1, aC, aC + 1]:
             if prob[y] > ran:
                 ySet = y
                 break
@@ -329,7 +349,7 @@ class ShadeLearning:
         return random.triangular(low = 211, high = 255, mode = 249)
 
     def load(self):
-        path = "C:/Users/Cody/Documents/Professional/inkpoint-ml/data/"
+        path = "C:/Users/Cody/Documents/Professional/inkpoint-ml/data/static/"
 
         V = Matrix.LoadCSV(path = path + "vWeights.csv")
         W = Matrix.LoadCSV(path = path + "wWeights.csv")

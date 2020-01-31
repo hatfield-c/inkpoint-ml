@@ -1,3 +1,5 @@
+.vscode/
 /samples/old
 /samples/orig
 *__pycache__*
+*/__pycache__/*
