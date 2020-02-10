@@ -5,11 +5,13 @@ from PIL import Image
 
 from Matrix import Matrix
 from util.ImageSpace import ImageSpace
+from util.shader.Group import Group
 
 class Artist:
     def __init__(self, pen, edgeSource, shadeSource, resultPath):
         self.pen = pen
         self.pointMin = 4
+        self.lastPoint = 0
 
         self.edgeSource = edgeSource
         self.shadeSource = shadeSource
@@ -30,15 +32,16 @@ class Artist:
 
     def draw(self):
         print("Generating point/result fields...")
-        pointField = Matrix.getEmptyMatrix(width = self.width, height = self.height)
+        traceField = Matrix.getEmptyMatrix(width = self.width, height = self.height)
+        shadeField = Matrix.getEmptyMatrix(width = self.width, height = self.height)
         resultField = Matrix.getEmptyMatrix(width = self.width, height = self.height)
         
         print("Tracing edges...")
-        self.trace(pointField)
-        print("Shading... (tbi)")
-        self.shade(pointField)
+        self.trace(traceField)
+        print("Shading...")
+        self.shade(shadeField)
         print("Writing results...")
-        self.apply(resultField, pointField)
+        self.apply(resultField, traceField)
         
         print("Saving...")
         Matrix.SaveImage(matrix = resultField, path = "render/draw-tests/out.png")
@@ -54,6 +57,9 @@ class Artist:
                     ImageSpace.SetPixel(pointField, xPlace, yPlace, 1)
 
     def shade(self, pointField):
+
+        #groupField = X.getGroupField()
+
         return
 
     def apply(self, resultField, pointField):
@@ -82,10 +88,13 @@ class Artist:
                         seed = random.uniform(-seedRange, seedRange)
 
     def canPlace(self, pointField, x, y):
-        for i in range(x - self.pointMin, x + self.pointMin + 1):
-            for j in range(y - self.pointMin, y + self.pointMin + 1):
-                if ImageSpace.SelectPixel(pointField, i, j) == 1:
-                    return False
+
+        minR = 0
+        for r in range(0, self.pointMin + 1):
+            for i in range(x - r, x + r + 1):
+                for j in range(y - r, y + r + 1):
+                    if ImageSpace.SelectPixel(pointField, i, j) == 1:
+                        return False
 
         return True
 

@@ -1,5 +1,6 @@
 import random
 import util.ImageSpace
+import util.ImageFactory
 from Matrix import Matrix
 
 from TrainingFactory import TrainingFactory
@@ -11,6 +12,7 @@ class App:
     def __init__(self):
         #training = TrainingFactory()
         #training.buildTraining()
+        #util.ImageFactory.ImageFactory.ExtractEdges(inPath = "imgs/self.png", outPath = "imgs/self-edges.png")
 
         #agent = CenterLearning()
         #agent.learn()
@@ -21,9 +23,9 @@ class App:
 
         artist = Artist(
             pen = agent,
-            edgeSource = 'imgs/flesh-edges.png',
-            shadeSource = 'imgs/fleshpile-clean.png',
-            resultPath = 'imgs/drawing.png'
+            edgeSource = 'imgs/self-edges.png',
+            shadeSource = 'imgs/self.png',
+            resultPath = 'imgs/drawing-self.png'
         )
         artist.draw()
 
