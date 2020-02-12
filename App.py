@@ -12,7 +12,8 @@ class App:
     def __init__(self):
         #training = TrainingFactory()
         #training.buildTraining()
-        #util.ImageFactory.ImageFactory.ExtractEdges(inPath = "imgs/self.png", outPath = "imgs/self-edges.png")
+        print("Extrating edges...")
+        util.ImageFactory.ImageFactory.ExtractEdges(inPath = "imgs/martyr.png", outPath = "imgs/martyr-edges.png")
 
         #agent = CenterLearning()
         #agent.learn()
@@ -23,9 +24,9 @@ class App:
 
         artist = Artist(
             pen = agent,
-            edgeSource = 'imgs/self-edges.png',
-            shadeSource = 'imgs/self.png',
-            resultPath = 'imgs/drawing-self.png'
+            edgeSource = 'imgs/martyr-edges.png',
+            shadeSource = 'imgs/martyr.png',
+            resultPath = 'render/draw-tests/martyr.png'
         )
         artist.draw()
 

@@ -33,18 +33,19 @@ class Artist:
     def draw(self):
         print("Generating point/result fields...")
         traceField = Matrix.getEmptyMatrix(width = self.width, height = self.height)
-        shadeField = Matrix.getEmptyMatrix(width = self.width, height = self.height)
+        shadingField = Matrix.getEmptyMatrix(width = self.width, height = self.height)
         resultField = Matrix.getEmptyMatrix(width = self.width, height = self.height)
         
         print("Tracing edges...")
         self.trace(traceField)
-        print("Shading...")
-        self.shade(shadeField)
-        print("Writing results...")
+        #print("Shading...")
+        #self.shade(shadingField)
+        print("Drawing image...")
         self.apply(resultField, traceField)
+        #self.apply(resultField, shadingField)
         
         print("Saving...")
-        Matrix.SaveImage(matrix = resultField, path = "render/draw-tests/out.png")
+        Matrix.SaveImage(matrix = resultField, path = self.resultPath)
 
     def trace(self, pointField):
         for x in range(self.width):
@@ -70,7 +71,7 @@ class Artist:
         for x in range(self.width):
             for y in range(self.height):
                 if pointField[x][y] == 1:
-                    point = self.pen.gen(index = seed, baseShade = self.pen.centerShade())
+                    point = self.pen.gen(index = seed, baseShade = self.shadeField[x][y])#self.pen.centerShade())
 
                     center = int((len(point) - 1) / 2)
                     
