@@ -184,6 +184,19 @@ class Matrix:
 
             return weights
 
+    @staticmethod
+    def DIAG(vector):
+        vector = vector[0]
+        size = len(vector)
+
+        result = Matrix.getEmptyMatrix(size, size)
+        for x in range(size):
+            for y in range(size):
+                if x == y:
+                    result[x][y] = vector[x]
+
+        return result
+
     # Element by element application of sigmoidal function onto
     # elements of a matrix
     @staticmethod
@@ -195,8 +208,12 @@ class Matrix:
 
         for x in range(width):
             for y in range(height):
-                entry = matrix[x][y]
-                sigm = 1 / (1 + math.exp((-1) * entry))
+                try:
+                    entry = matrix[x][y]
+                    sigm = 1 / (1 + math.exp((-1) * entry))
+                except:
+                    print(entry)
+                    #exit()
 
                 result[x][y] = sigm
 
@@ -330,6 +347,24 @@ class Matrix:
             for y in range(height):
                 entry = matrix[x][y]
                 entry = entry / maxVal
+                column.append(entry)
+
+            result.append(column)
+
+        return result
+
+    @staticmethod
+    def invertNormData(matrix):
+        width = len(matrix)
+        height = len(matrix[0])
+
+        result = []
+
+        for x in range(width):
+            column = []
+            for y in range(height):
+                entry = matrix[x][y]
+                entry = 1 - entry
                 column.append(entry)
 
             result.append(column)

@@ -6,15 +6,19 @@ from Matrix import Matrix
 from TrainingFactory import TrainingFactory
 from CenterLearning import CenterLearning
 from ShadeLearning import ShadeLearning
+from FeatureLearning import FeatureLearning
 from Artist import Artist
+
+import os
+os.chdir("C:\\Users\\Cody\\Documents\\Professional\\inkpoint-ml\\")
 
 class App:
     def __init__(self):
         #training = TrainingFactory()
         #training.buildTraining()
-        print("Extrating edges...")
-        util.ImageFactory.ImageFactory.ExtractEdges(inPath = "imgs/martyr.png", outPath = "imgs/martyr-edges.png")
-
+        print("Extracting edges...")
+        util.ImageFactory.ImageFactory.ExtractEdges(inPath = "imgs\\personal\\me.jpg", outPath = "imgs\\personal\\me-edges.jpg")
+        #return
         #agent = CenterLearning()
         #agent.learn()
 
@@ -22,11 +26,14 @@ class App:
         #agent.learn(save = True)
         agent.load()
 
+        #agent = FeatureLearning(imgPath = "imgs/sample_tiny.jpg")
+        #agent.learn()
+
         artist = Artist(
             pen = agent,
-            edgeSource = 'imgs/martyr-edges.png',
-            shadeSource = 'imgs/martyr.png',
-            resultPath = 'render/draw-tests/martyr.png'
+            edgeSource = 'imgs\\personal\\me-edges.jpg',
+            shadeSource = 'imgs\\personal\\me.jpg',
+            resultPath = 'render\\draw-tests\\personal\\me.jpg'
         )
         artist.draw()
 

@@ -7,7 +7,7 @@ class ImageSpace:
         self.img = img
         self.field = None
 
-    def getField(self):
+    def getField(self, invert = True):
         field = []
 
         width, height = self.img.size
@@ -27,9 +27,15 @@ class ImageSpace:
                 # a shade value of 0.
                 # The resulting image will be de-inverted upon save.
                 if isinstance(pixel, list) or isinstance(pixel, tuple):
-                    pixel = abs(255 - pixel[0])
+                    if invert:
+                        pixel = abs(255 - pixel[0])
+                    else:
+                        pixel = pixel[0]
                 else:
-                    pixel = abs(255 - pixel)
+                    if invert:
+                        pixel = abs(255 - pixel)
+                    else:
+                        pixel = pixel
 
                 column.append(pixel)
 

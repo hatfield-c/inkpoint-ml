@@ -20,7 +20,7 @@ class Artist:
         print("Opening edge source...")
         img = Image.open(self.edgeSource)
         imgSpace = ImageSpace(img = img)
-        self.edgeField = imgSpace.getField()
+        self.edgeField = imgSpace.getField(invert = True)
 
         print("Opening shade source...")
         img = Image.open(self.shadeSource)

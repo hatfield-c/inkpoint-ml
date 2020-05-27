@@ -52,7 +52,7 @@ class LeastSquares(util.Machine.Machine):
         return (desired - predicted[0][0]) ** 2
 
     def dldw(self, desired, predicted, s):
-        # dldw = (- (desired - predicted)) * V' * DIAG[Sigmoidal(W * s)] * uk * s'
+        # dldw = (-2 * (desired - predicted)) * V' * DIAG[Sigmoidal(W * s)] * uk * s'
         difference = desired - predicted[0][0]
         difference = -1 * difference
 
